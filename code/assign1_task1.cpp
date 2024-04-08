@@ -88,14 +88,11 @@ public:
     string outputFileName;       // + The name of the file where to write
     string input;                // + The input
     size_t atImageList; 
-
     int nrFrames;                // + The number of frames to use from the input for calibration
     int flag; 
-
     float squareSize;            // + The size of a square in your defined unit (point, millimeter,etc).
     float markerSize;            // ? The size of a marker in your defined unit (point, millimeter,etc).
     float aspectRatio;           // ? The aspect ratio
-    
     bool ok;
     bool showUndistorted;        // + Show undistorted images after calibration
     bool calibZeroTangentDist;   // + Assume zero tangential distortion
@@ -116,14 +113,15 @@ int calibrationSingleCamera(string inputPath, string outputPath);
 
 int main(int argc, char* argv[]) {
 
-    string leftCameraList = "";
-    string leftCameraOutput = "";
+    cout << "Left calibration:\n";
+    string leftCameraList = "./data/CALIB_DATA/left";
+    string leftCameraOutput = "./fileoutput/left_calib";
     calibrationSingleCamera(leftCameraList, leftCameraOutput);
 
-    string rightCameraList = "";
-    string rightCameraOutput = "";
-    calibrationSingleCamera(leftCameraList, leftCameraOutput);
-
+    cout << "Right calibration:\n";
+    string rightCameraList = "./data/CALIB_DATA/right";
+    string rightCameraOutput = "./fileoutput/right_calib";
+    calibrationSingleCamera(rightCameraList, rightCameraOutput);
     return 0;
 }
 
