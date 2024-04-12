@@ -12,6 +12,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/objdetect/charuco_detector.hpp>
+#include "../include/assign1_task2.hpp"
 
 using namespace cv;
 using namespace std;
@@ -113,15 +114,19 @@ int calibrationSingleCamera(string inputPath, string outputPath);
 
 int main(int argc, char* argv[]) {
 
+
     cout << "Left calibration:\n";
     string leftCameraList = "./data/CALIB_DATA/left";
     string leftCameraOutput = "./fileoutput/left_calib";
-    calibrationSingleCamera(leftCameraList, leftCameraOutput);
+    // calibrationSingleCamera(leftCameraList, leftCameraOutput);
 
     cout << "Right calibration:\n";
     string rightCameraList = "./data/CALIB_DATA/right";
     string rightCameraOutput = "./fileoutput/right_calib";
-    calibrationSingleCamera(rightCameraList, rightCameraOutput);
+    // calibrationSingleCamera(rightCameraList, rightCameraOutput);
+
+    calculateExtrinsicParams(leftCameraList, rightCameraList, Size(8,5), 30, leftCameraOutput, rightCameraOutput, "./fileoutput/externals");
+
     return 0;
 }
 
