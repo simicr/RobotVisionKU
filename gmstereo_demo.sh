@@ -2,10 +2,10 @@
 
 
 CUDA_VISIBLE_DEVICES=0 python3 unimatch/main_stereo.py \
---inference_dir unimatch/demo/stereo-middlebury \
+--inference_dir fileoutput/rectify \
 --inference_size 1024 1536 \
---output_path fileoutput/disparity_picture.png \
---resume pretrained/gmstereo-scale2-regrefine3-resumeflowthings-middleburyfthighres-a82bec03.pth \
+--output_path fileoutput \
+--resume unimatch/pretrained/gmstereo-scale2-regrefine3-resumeflowthings-middleburyfthighres-a82bec03.pth \
 --padding_factor 32 \
 --upsample_factor 4 \
 --num_scales 2 \
@@ -14,8 +14,6 @@ CUDA_VISIBLE_DEVICES=0 python3 unimatch/main_stereo.py \
 --corr_radius_list -1 4 \
 --prop_radius_list -1 1 \
 --reg_refine \
---num_reg_refine 3
-
-
-
-
+--num_reg_refine 3 \
+--save_pfm_disp \
+--save_vis_disp 
