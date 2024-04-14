@@ -1,30 +1,7 @@
-/* This is sample from the OpenCV book. The copyright notice is below */
-
-/* *************** License:**************************
-   Oct. 3, 2008
-   Right to use this code in any way you want without warranty, support or any guarantee of it working.
-
-   BOOK: It would be nice if you cited it:
-   Learning OpenCV: Computer Vision with the OpenCV Library
-     by Gary Bradski and Adrian Kaehler
-     Published by O'Reilly Media, October 3, 2008
-
-   AVAILABLE AT:
-     http://www.amazon.com/Learning-OpenCV-Computer-Vision-Library/dp/0596516134
-     Or: http://oreilly.com/catalog/9780596516130/
-     ISBN-10: 0596516134 or: ISBN-13: 978-0596516130
-
-   OPENCV WEBSITES:
-     Homepage:      http://opencv.org
-     Online docs:   http://docs.opencv.org
-     GitHub:        https://github.com/opencv/opencv/
-   ************************************************** */
-
 #include "opencv2/calib3d.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
-// #include "opencv2/objdetect/charuco_detector.hpp"
 
 #include <vector>
 #include <string>
@@ -35,40 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "../include/assign1_task2.hpp"
 
 using namespace cv;
 using namespace std;
 namespace fs = std::filesystem;
 
-static int print_help(char** argv)
-{
-    cout <<
-            " Given a list of chessboard or ChArUco images, the number of corners (nx, ny)\n"
-            " on the chessboards and the number of squares (nx, ny) on ChArUco,\n"
-            " and a flag: useCalibrated for \n"
-            "   calibrated (0) or\n"
-            "   uncalibrated \n"
-            "     (1: use stereoCalibrate(), 2: compute fundamental\n"
-            "         matrix separately) stereo. \n"
-            " Calibrate the cameras and display the\n"
-            " rectified results along with the computed disparity images.   \n" << endl;
-    cout << "Usage:\n " << argv[0] << " -w=<board_width default=9> -h=<board_height default=6>"
-        <<" -t=<pattern type: chessboard or charucoboard default=chessboard> -s=<square_size default=1.0> -ms=<marker size default=0.5>"
-        <<" -ad=<predefined aruco dictionary name default=DICT_4X4_50> -adf=<aruco dictionary file default=None>"
-        <<" <image list XML/YML file default=stereo_calib.xml>\n" << endl;
-    cout << "Available Aruco dictionaries: DICT_4X4_50, DICT_4X4_100, DICT_4X4_250, "
-        << "DICT_4X4_1000, DICT_5X5_50, DICT_5X5_100, DICT_5X5_250, DICT_5X5_1000, "
-        << "DICT_6X6_50, DICT_6X6_100, DICT_6X6_250, DICT_6X6_1000, DICT_7X7_50, "
-        << "DICT_7X7_100, DICT_7X7_250, DICT_7X7_1000, DICT_ARUCO_ORIGINAL, "
-        << "DICT_APRILTAG_16h5, DICT_APRILTAG_25h9, DICT_APRILTAG_36h10, DICT_APRILTAG_36h11\n";
-
-    return 0;
-}
-
-
-static void
-StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSize, string leftParamsInputPath, string rightParamsInputPath, string extrinsicsOutputPath, bool displayCorners = false, bool useCalibrated=true, bool showRectified=true)
+static void StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSize, 
+                        string leftParamsInputPath, string rightParamsInputPath, string extrinsicsOutputPath, 
+                        bool displayCorners = false, bool useCalibrated=true, bool showRectified=true)
 {
     if( imagelist.size() % 2 != 0 )
     {
@@ -147,14 +98,16 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
                     exit(-1);
             }
             else
+            {
                 putchar('.');
+            }
+
             if( !found )
                 break;
 
-            cornerSubPix(img, corners, Size(11, 11), Size(-1, -1),
-                TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,
-                    30, 0.01));
+            cornerSubPix(img, corners, Size(11, 11), Size(-1, -1), TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 30, 0.01));
         }
+        
         if( k == 2 )
         {
             goodImageList.push_back(imagelist[i*2]);
@@ -162,6 +115,7 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
             j++;
         }
     }
+    
     cout << j << " pairs have been successfully detected.\n";
     nimages = j;
     if( nimages < 2 )
@@ -186,9 +140,9 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
     Mat cameraMatrix[2], distCoeffs[2];
     FileStorage leftParams(leftParamsInputPath, 0);
     FileStorage rightParams(rightParamsInputPath, 0);
-    leftParams["camera_matrix"] >> cameraMatrix[0]; // or whatever name you used before
+    leftParams["camera_matrix"] >> cameraMatrix[0];
     leftParams["distortion_coefficients"] >> distCoeffs[0];
-    rightParams["camera_matrix"] >> cameraMatrix[1]; // or whatever name you used before
+    rightParams["camera_matrix"] >> cameraMatrix[1]; 
     rightParams["distortion_coefficients"] >> distCoeffs[1];
     leftParams.release();
     rightParams.release();
@@ -208,11 +162,11 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
                     TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-5) );
     cout << "done with RMS error=" << rms << endl;
 
-// CALIBRATION QUALITY CHECK
-// because the output fundamental matrix implicitly
-// includes all the output information,
-// we can check the quality of calibration using the
-// epipolar geometry constraint: m2^t*F*m1=0
+    // CALIBRATION QUALITY CHECK
+    // because the output fundamental matrix implicitly
+    // includes all the output information,
+    // we can check the quality of calibration using the
+    // epipolar geometry constraint: m2^t*F*m1=0
     double err = 0;
     int npoints = 0;
     vector<Vec3f> lines[2];
@@ -238,17 +192,6 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
     }
     cout << "average epipolar err = " <<  err/npoints << endl;
 
-    // // save intrinsic parameters
-    // FileStorage fs("intrinsics.yml", FileStorage::WRITE);
-    // if( fs.isOpened() )
-    // {
-    //     fs << "M1" << cameraMatrix[0] << "D1" << distCoeffs[0] <<
-    //         "M2" << cameraMatrix[1] << "D2" << distCoeffs[1];
-    //     fs.release();
-    // }
-    // else
-    //     cout << "Error: can not save the intrinsic parameters\n";
-
     Mat R1, R2, P1, P2, Q;
     Rect validRoi[2];
 
@@ -257,7 +200,7 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
                   imageSize, R, T, R1, R2, P1, P2, Q,
                   CALIB_ZERO_DISPARITY, 1, imageSize, &validRoi[0], &validRoi[1]);
 
-    FileStorage fs("extrinsics.yml", FileStorage::WRITE);
+    FileStorage fs(extrinsicsOutputPath, FileStorage::WRITE);
     if( fs.isOpened() )
     {
         fs << "R" << R << "T" << T << "R1" << R1 << "R2" << R2 << "P1" << P1 << "P2" << P2 << "Q" << Q;
@@ -266,25 +209,13 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
     else
         cout << "Error: can not save the extrinsic parameters\n";
 
-    // OpenCV can handle left-right
-    // or up-down camera arrangements
     bool isVerticalStereo = fabs(P2.at<double>(1, 3)) > fabs(P2.at<double>(0, 3));
 
-// COMPUTE AND DISPLAY RECTIFICATION
     if( !showRectified )
         return;
 
     Mat rmap[2][2];
-// IF BY CALIBRATED (BOUGUET'S METHOD)
-    if( useCalibrated )
-    {
-        // we already computed everything
-    }
-// OR ELSE HARTLEY'S METHOD
-    else
- // use intrinsic parameters of each camera, but
- // compute the rectification transformation directly
- // from the fundamental matrix
+    if( !useCalibrated )
     {
         vector<Point2f> allimgpt[2];
         for( k = 0; k < 2; k++ )
@@ -302,7 +233,6 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
         P2 = cameraMatrix[1];
     }
 
-    //Precompute maps for cv::remap()
     initUndistortRectifyMap(cameraMatrix[0], distCoeffs[0], R1, P1, imageSize, CV_16SC2, rmap[0][0], rmap[0][1]);
     initUndistortRectifyMap(cameraMatrix[1], distCoeffs[1], R2, P2, imageSize, CV_16SC2, rmap[1][0], rmap[1][1]);
 
@@ -354,22 +284,6 @@ StereoCalib(const vector<string>& imagelist, Size inputBoardSize, float squareSi
     }
 }
 
-
-// static bool readStringList( const string& filename, vector<string>& l )
-// {
-//     l.resize(0);
-//     FileStorage fs(filename, FileStorage::READ);
-//     if( !fs.isOpened() )
-//         return false;
-//     FileNode n = fs.getFirstTopLevelNode();
-//     if( n.type() != FileNode::SEQ )
-//         return false;
-//     FileNodeIterator it = n.begin(), it_end = n.end();
-//     for( ; it != it_end; ++it )
-//         l.push_back((string)*it);
-//     return true;
-// }
-
 static bool readStringList( const string& filename, vector<string>& l )
 {
     l.clear();
@@ -383,20 +297,6 @@ static bool readStringList( const string& filename, vector<string>& l )
 
 int calculateExtrinsicParams(string leftCameraList, string rightCameraList, Size boardSize, float squareSize, string leftParamsInputPath, string rightParamsInputPath, string extrinsicsOutputPath)
 {
-    // Size inputBoardSize;
-    // string imagelistfn;
-    // bool showRectified;
-    // cv::CommandLineParser parser(argc, argv, "{w|9|}{h|6|}{t|chessboard|}{s|1.0|}{ms|0.5|}{ad|DICT_4X4_50|}{adf|None|}{nr||}{help||}{@input|stereo_calib.xml|}");
-    // if (parser.has("help"))
-    //     return print_help(argv);
-    // showRectified = !parser.has("nr");
-    // imagelistfn = samples::findFile(parser.get<string>("@input"));
-    // inputBoardSize.width = parser.get<int>("w");
-    // inputBoardSize.height = parser.get<int>("h");
-    // string type = parser.get<string>("t");
-    // float squareSize = parser.get<float>("s");
-    // float markerSize = parser.get<float>("ms");
-
     vector<string> leftImageList;
     bool ok = readStringList(leftCameraList, leftImageList);
     std::cout << "Image size: " << leftImageList.size() << std::endl;
@@ -408,6 +308,7 @@ int calculateExtrinsicParams(string leftCameraList, string rightCameraList, Size
 
     vector<string> rightImageList;
     ok = readStringList(rightCameraList, rightImageList);
+    std::cout << "Image size: " << rightImageList.size() << std::endl;
     if(!ok || rightImageList.empty())
     {
         cout << "can not open " << rightCameraList << " or the string list is empty" << endl;
@@ -421,9 +322,21 @@ int calculateExtrinsicParams(string leftCameraList, string rightCameraList, Size
         imageListPairs.push_back(rightImageList[i]);
     }
 
-
     StereoCalib(imageListPairs, boardSize, squareSize, 
     leftParamsInputPath, rightParamsInputPath, extrinsicsOutputPath, 
     false, true, true);
+    return 0;
+}
+
+int main()
+{   
+    string left_calibration = "fileoutput/left_calib.yaml";
+    string right_calibration = "fileoutput/right_calib.yaml";
+    string left_input = "data/CALIB_DATA/left";
+    string right_input = "data/CALIB_DATA/right";
+    string output_path = "fileoutput/extrinsic.yaml";
+
+    calculateExtrinsicParams(left_input, right_input, Size(8,5), 30, left_calibration, right_calibration, output_path);
+
     return 0;
 }
