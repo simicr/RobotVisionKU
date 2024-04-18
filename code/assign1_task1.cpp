@@ -12,7 +12,6 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/objdetect/charuco_detector.hpp>
-#include "../include/assign1_task2.hpp"
 
 using namespace cv;
 using namespace std;
@@ -21,7 +20,7 @@ namespace fs = std::filesystem;
 class Settings
 {
 public:
-    Settings(string inputPath, string outputPath, Size boardSize, float squareSize) : input(inputPath), outputFileName(outputPath), boardSize(8,5), squareSize(30){
+    Settings(string inputPath, string outputPath) : input(inputPath), outputFileName(outputPath), boardSize(8,5){
 
         bool ok = readStringList(input, imageList);
         if (!ok) 
@@ -29,6 +28,7 @@ public:
             cerr << "Error while reading input";
         } else {
             // Double check
+            squareSize = 30;
             nrFrames = (int) imageList.size(); 
             fixK1 = false;
             fixK2 = false;
@@ -38,15 +38,13 @@ public:
             showUndistorted = true;
             calibFixPrincipalPoint = false;
             calibZeroTangentDist = false;
-            atImageList = 0;
-            flipVertical = false;
             writeExtrinsics = false;
-            aspectRatio = false; // Can be both removed?
-
+            
+            atImageList = 0;
             flag = 0;
+            
             if(calibFixPrincipalPoint) flag |= CALIB_FIX_PRINCIPAL_POINT;
             if(calibZeroTangentDist)   flag |= CALIB_ZERO_TANGENT_DIST;
-            if(aspectRatio)            flag |= CALIB_FIX_ASPECT_RATIO;
             if(fixK1)                  flag |= CALIB_FIX_K1;
             if(fixK2)                  flag |= CALIB_FIX_K2;
             if(fixK3)                  flag |= CALIB_FIX_K3;
@@ -83,7 +81,7 @@ public:
     }
 
 public:
-    VideoCapture inputCapture; 
+
     Size boardSize;              // + The size of the board -> Number of items by width and height
     vector<string> imageList; 
     string outputFileName;       // + The name of the file where to write
@@ -92,20 +90,20 @@ public:
     int nrFrames;                // + The number of frames to use from the input for calibration
     int flag; 
     float squareSize;            // + The size of a square in your defined unit (point, millimeter,etc).
-    float markerSize;            // ? The size of a marker in your defined unit (point, millimeter,etc).
-    float aspectRatio;           // ? The aspect ratio
     bool ok;
     bool showUndistorted;        // + Show undistorted images after calibration
-    bool calibZeroTangentDist;   // + Assume zero tangential distortion
-    bool calibFixPrincipalPoint; // + Fix the principal point at the center
-    bool fixK1;                  // + fix K1 distortion coefficient
-    bool fixK2;                  // + fix K2 distortion coefficient
-    bool fixK3;                  // + fix K3 distortion coefficient
-    bool fixK4;                  // + fix K4 distortion coefficient
-    bool fixK5;                  // + fix K5 distortion coefficient  
-    bool flipVertical;           // ? Flip the captured images around the horizontal axis
-    bool writeExtrinsics;        // ? Write extrinsic parameters
-    bool writeGrid;              // ? Write refined 3D target grid points
+    
+    VideoCapture inputCapture;    // Needed?
+    // Needed? Delete everthing and set the value of the flag as needed?
+    bool calibZeroTangentDist;   // Assume zero tangential distortion
+    bool calibFixPrincipalPoint; // Fix the principal point at the center
+    bool fixK1;                  // fix K1 distortion coefficient
+    bool fixK2;                  // fix K2 distortion coefficient
+    bool fixK3;                  // fix K3 distortion coefficient
+    bool fixK4;                  // fix K4 distortion coefficient
+    bool fixK5;                  // fix K5 distortion coefficient  
+    bool writeExtrinsics;        // Write extrinsic parameters
+    bool writeGrid;              // Write refined 3D target grid points
 };
 enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat& cameraMatrix, Mat& distCoeffs,
@@ -114,15 +112,14 @@ int calibrationSingleCamera(string inputPath, string outputPath);
 
 int main(int argc, char* argv[]) {
 
-
     cout << "Left calibration:\n";
-    string leftCameraList = "./data/CALIB_DATA/left";
-    string leftCameraOutput = "./fileoutput/left_calib.yaml";
+    string leftCameraList = "data/CALIB_DATA/left";
+    string leftCameraOutput = "fileoutput/left_calib.yaml";
     calibrationSingleCamera(leftCameraList, leftCameraOutput);
 
     cout << "Right calibration:\n";
-    string rightCameraList = "./data/CALIB_DATA/right";
-    string rightCameraOutput = "./fileoutput/right_calib";
+    string rightCameraList = "data/CALIB_DATA/right";
+    string rightCameraOutput = "fileoutput/right_calib.yaml";
     calibrationSingleCamera(rightCameraList, rightCameraOutput);
     
     return 0;
@@ -130,20 +127,16 @@ int main(int argc, char* argv[]) {
 
 int calibrationSingleCamera(string inputPath, string outputPath)
 {
-    Settings s(inputPath, outputPath, Size(8,5), 30);
+    Settings s(inputPath, outputPath);
     vector<vector<Point2f>> imagePoints;
     Mat cameraMatrix, distCoeffs;
     Size imageSize;
 
     int mode = CAPTURING;
-    int winSize = 11; // What is this?
-    const char ESC_KEY = 27;
-
     for(;;)
     {
         Mat view;
         view = s.nextImage();
-        bool blinkOutput = false; // Needed?
         
         if( mode == CAPTURING && imagePoints.size() >= (size_t)s.nrFrames )
         {
@@ -163,24 +156,22 @@ int calibrationSingleCamera(string inputPath, string outputPath)
             break;
         }
         imageSize = view.size();
-        if( s.flipVertical )    flip( view, view, 0 ); // Needed?
 
         vector<Point2f> pointBuf;
-        bool found;
         int chessBoardFlags = CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE | CALIB_CB_FAST_CHECK;
-
-        found = findChessboardCorners( view, s.boardSize, pointBuf, chessBoardFlags);
+        bool found = findChessboardCorners( view, s.boardSize, pointBuf, chessBoardFlags);
         if (found)                
         {
             Mat viewGray;
             cvtColor(view, viewGray, COLOR_BGR2GRAY);
-            cornerSubPix( viewGray, pointBuf, Size(winSize,winSize), Size(-1,-1), TermCriteria( TermCriteria::EPS+TermCriteria::COUNT, 30, 0.0001 ));
+            cornerSubPix( viewGray, pointBuf, Size(11,11), Size(-1,-1), TermCriteria( TermCriteria::EPS+TermCriteria::COUNT, 30, 0.0001 ));
             imagePoints.push_back(pointBuf);
         }
     }
 
     if(s.showUndistorted && !cameraMatrix.empty())
     {
+        const char ESC_KEY = 27;
         Mat view, rview, map1, map2;
         initUndistortRectifyMap( cameraMatrix, distCoeffs, Mat()
         , getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, imageSize, 1, imageSize, 0)
@@ -241,9 +232,7 @@ static bool runCalibration( Settings& s, Size& imageSize, Mat& cameraMatrix, Mat
                             vector<vector<Point2f> > imagePoints, vector<Mat>& rvecs, vector<Mat>& tvecs,
                             vector<float>& reprojErrs,  double& totalAvgErr, vector<Point3f>& newObjPoints)
 {
-    cameraMatrix = Mat::eye(3, 3, CV_64F);
-    if(s.flag & CALIB_FIX_ASPECT_RATIO )
-        cameraMatrix.at<double>(0,0) = s.aspectRatio; // ?     
+    cameraMatrix = Mat::eye(3, 3, CV_64F);  
     distCoeffs = Mat::zeros(8, 1, CV_64F);
 
     vector<vector<Point3f> > objectPoints(1);
@@ -273,6 +262,7 @@ static void saveCameraParams( Settings& s, Size& imageSize, Mat& cameraMatrix, M
     fs << "distortion_coefficients" << distCoeffs;
     fs << "avg_reprojection_error" << totalAvgErr;
 
+    // Everything below. Needed? We do not need the R and T information?
     if (s.writeExtrinsics && !reprojErrs.empty())
     {
         fs << "per_view_reprojection_errors" << Mat(reprojErrs);
