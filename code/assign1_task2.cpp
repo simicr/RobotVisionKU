@@ -140,39 +140,6 @@ static void StereoCalib(const vector<string>& imagelist, Size boardSize, float s
                     TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-5) );
     cout << "done with RMS error=" << rms << endl;
 
-
-    // CALIBRATION QUALITY CHECK
-    // because the output fundamental matrix implicitly
-    // includes all the output information,
-    // we can check the quality of calibration using the
-    // epipolar geometry constraint: m2^t*F*m1=0
-    
-    // Needed? 
-    double err = 0;
-    int npoints = 0;
-    vector<Vec3f> lines[2];
-    for( i = 0; i < nimages; i++ )
-    {
-        int npt = (int)imagePoints[0][i].size();
-        Mat imgpt[2];
-        for( k = 0; k < 2; k++ )
-        {
-            imgpt[k] = Mat(imagePoints[k][i]);
-            undistortPoints(imgpt[k], imgpt[k], cameraMatrix[k], distCoeffs[k], Mat(), cameraMatrix[k]);
-            computeCorrespondEpilines(imgpt[k], k+1, F, lines[k]);
-        }
-        for( j = 0; j < npt; j++ )
-        {
-            double errij = fabs(imagePoints[0][i][j].x*lines[1][j][0] +
-                                imagePoints[0][i][j].y*lines[1][j][1] + lines[1][j][2]) +
-                           fabs(imagePoints[1][i][j].x*lines[0][j][0] +
-                                imagePoints[1][i][j].y*lines[0][j][1] + lines[0][j][2]);
-            err += errij;
-        }
-        npoints += npt;
-    }
-    cout << "Avg. epipolar err = " <<  err/npoints << endl;
-
     FileStorage fs(intristic_output, FileStorage::WRITE);
     if( fs.isOpened() )
     {
