@@ -18,7 +18,7 @@ using namespace cv;
 using namespace std;
 namespace fs = std::filesystem;
 
-static void savePLY(const string& filename, const Mat& mat, const Mat& img) {
+static void save_ply(const string& filename, const Mat& mat, const Mat& img) {
 
     FILE* fp = fopen(filename.c_str(), "wt");
 
@@ -165,7 +165,7 @@ int main(int argc, char** argv)
     }
     disp = read_pfm(disparity_filename);
     reprojectImageTo3D(disp, xyz, Q);
-    savePLY(point_cloud_filename, xyz, img1);
+    save_ply(point_cloud_filename, xyz, img1);
 
     return 0;
 }

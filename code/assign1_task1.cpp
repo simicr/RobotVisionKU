@@ -94,7 +94,6 @@ public:
     bool showUndistorted;        // + Show undistorted images after calibration
     
     VideoCapture inputCapture;    // Needed?
-    // Needed? Delete everthing and set the value of the flag as needed?
     bool calibZeroTangentDist;   // Assume zero tangential distortion
     bool calibFixPrincipalPoint; // Fix the principal point at the center
     bool fixK1;                  // fix K1 distortion coefficient
@@ -149,6 +148,7 @@ int calibrationSingleCamera(string inputPath, string outputPath)
             mode = DETECTION;
           }          
         }
+        
         if(view.empty())  
         {
             if( mode != CALIBRATED && !imagePoints.empty() )
