@@ -52,19 +52,18 @@ Mat read_pfm(const string& filename)
     int width = 0, height = 0;
     float scale = 0.0f;
     char endian = ' ';
-    int color_ch;
+    int chanels;
 
     string header;
+    string line;
+
     getline(file, header);
     if (header == "PF") {
         color = true;
     } else if (header == "Pf") {
         color = false;
-    } else {
-        throw runtime_error("Not a PFM file.");
-    }
+    } 
 
-    string line;
     getline(file, line);
     regex dim_regex(R"((\d+)\s(\d+))");
     smatch dim_match;
@@ -84,14 +83,14 @@ Mat read_pfm(const string& filename)
     }
 
     if(color){
-        color_ch = 3;
+        chanels = 3;
     } else {
-        color_ch = 1;
+        chanels = 1;
     }
    
 
-    vector<float> buffer(width * height * color_ch);
-    file.read(reinterpret_cast<char*>(buffer.data()), sizeof(float) * width * height * color_ch);
+    vector<float> buffer(width * height * chanels);
+    file.read(reinterpret_cast<char*>(buffer.data()), sizeof(float) * width * height * chanels);
     
     Mat data;
     if (color) {

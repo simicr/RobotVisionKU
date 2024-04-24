@@ -35,7 +35,8 @@ public:
             fixK3 = false;
             fixK4 = true;
             fixK5 = true;
-            showUndistorted = true;
+            
+            showUndistorted = false;
             calibFixPrincipalPoint = false;
             calibZeroTangentDist = false;
             writeExtrinsics = false;
