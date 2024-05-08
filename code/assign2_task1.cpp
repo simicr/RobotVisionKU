@@ -8,7 +8,7 @@ using namespace cv;
 using namespace cv::xfeatures2d;
 using namespace std;
  
-void detection_and_matching(Mat img1, Mat img2, Ptr<Feature2D> detector, bool binary=false, Ptr<Feature2D> descriptor=nullptr, string& output) 
+void detection_and_matching(string& output, Mat img1, Mat img2, Ptr<Feature2D> detector, bool binary=false, Ptr<Feature2D> descriptor=nullptr) 
 {
     const float ratio_thresh = 0.7f;
 
@@ -41,20 +41,31 @@ void detection_and_matching(Mat img1, Mat img2, Ptr<Feature2D> detector, bool bi
             good_matches.push_back(knn_matches[i][0]);
         }
     }
- 
-    // Showing results, needs to be changed so that the images and points are saved
-    
+     
+    Mat img_keypoints1, img_keypoints2;
     Mat img_matches;
+
+    drawKeypoints(img1, keypoints1, img_keypoints1);
+    drawKeypoints(img2, keypoints2, img_keypoints2);
     drawMatches( img1, keypoints1, img2, keypoints2, good_matches, img_matches, Scalar::all(-1),
     Scalar::all(-1), vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-    string windowName;
-    if (descriptor == nullptr) {
-        windowName = detector->getDefaultName();
-    } else {
-        windowName = detector->getDefaultName() + descriptor->getDefaultName();
-    }
-    imshow(windowName, img_matches);
-    waitKey();
+    
+    string detector_name = detector->getDefaultName();
+    string descriptor_name = descriptor == nullptr ? detector_name : descriptor->getDefaultName();
+    int posdot = detector_name.find('.');
+    detector_name = detector_name.substr(posdot+1);
+    descriptor_name = descriptor_name.substr(posdot+1);
+
+    imwrite( output + detector_name + "1.png", img_keypoints1);
+    imwrite( output + detector_name + "2.png", img_keypoints2);
+    imwrite( output + detector_name + "+" + descriptor_name +".png", img_matches);
+
+    FileStorage fs(output + "matches.yaml", FileStorage::WRITE);
+    fs << "Matches" << good_matches;
+    fs << "KP1" << keypoints1;
+    fs << "KP2" << keypoints2;
+    fs.release();
+    
 }
 
 int feature_matching(string& left_image, string& right_image, string& output) 
@@ -73,10 +84,10 @@ int feature_matching(string& left_image, string& right_image, string& output)
     Ptr<FastFeatureDetector> fast = FastFeatureDetector::create();
     Ptr<BriefDescriptorExtractor> brief = BriefDescriptorExtractor::create();
 
-    detection_and_matching(img1, img2, surf, false, nullptr, output);
-    detection_and_matching(img1, img2, sift, false, nullptr, output);
-    detection_and_matching(img1, img2, orb, true, nullptr, output);
-    detection_and_matching(img1, img2, fast, true, brief, output);
+    detection_and_matching(output, img1, img2, surf, false, nullptr);
+    detection_and_matching(output, img1, img2, sift, false, nullptr);
+    detection_and_matching(output, img1, img2, orb, true, nullptr);
+    detection_and_matching(output, img1, img2, fast, true, brief);
 
     return 0;
 }
@@ -87,8 +98,9 @@ int main( int argc, char* argv[] )
     string left10 = "IMG_CAL_DATA/left10.png";
     string right8 = "IMG_CAL_DATA/right08.png";
 
-    string matching_out1 = "fileoutput/lr/";
-    string matching_out2 = "fileoutput/ll/";
+    string matching_out1 = "fileoutput/LR/";
+    string matching_out2 = "fileoutput/LL/";
 
     feature_matching( left8, right8, matching_out1);
+    feature_matching( left8, left10, matching_out2);
 }
