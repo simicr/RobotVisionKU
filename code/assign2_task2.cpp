@@ -109,7 +109,6 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
     matchesFile["KP2"] >> kp2;
 
     Mat img1 = imread( samples::findFile( img1Path ), IMREAD_GRAYSCALE );
-    // Mat img2 = imread( samples::findFile( right8 ), IMREAD_GRAYSCALE );
     Mat img2 = imread( samples::findFile( img2Path ), IMREAD_GRAYSCALE );
 
     for(auto match : matches)
@@ -177,15 +176,14 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
 
     drawLines(img1, img2, fundamentalMat, inlierPts1, inlierPts2, inliers);
     hconcat(img1, img2, img1);
-    imshow("epipolar lines, image 1, 2", img1);
+    // imshow("epipolar lines, image 1, 2", img1);
+    // waitKey();
     string fileName = output + detectorName + "_" + getAlogorithmFromEnum(alg) + ".png";
     cout << "Saving: " << fileName << endl;
     imwrite( fileName, img1);
-    waitKey();
 };
 
 int main() {
-    std::cout << "Hello World!";
     vector<DMatch> matches;
     vector<KeyPoint> kp1, kp2;
     vector<Point2d> pts1, pts2;
@@ -255,182 +253,5 @@ int main() {
     processEpipolarLines(inputLeftRight + matchesSIFT, left8, right8, FUNDAMENTAL8P_RANSAC, LEFT_RIGHT, outputLeftRight,"SIFT");
 
     //====================================
-    return 0;
-
-    // processEpipolarLines("fileoutput/LL/matches_FastFeatureDetector.yaml", left8, right8, ESSENTIAL_RANSAC, LEFT_RIGHT, outputLeftRight,"FastFeatureDetector");
-    // processEpipolarLines("fileoutput/LL/matches_FastFeatureDetector.yaml", left8, left10, ESSENTIAL_RANSAC, LEFT_ONLY, outputLeftOnly,"FastFeatureDetector");
-    // processEpipolarLines("fileoutput/LL/matches_FastFeatureDetector.yaml", left8, right8, ESSENTIAL_RANSAC, LEFT_RIGHT, outputLeftRight,"FastFeatureDetector");
-
-
-
-    // processEpipolarLines("fileoutput/LL/matches_ORB.yaml", left8, left10,FUNDAMENTAL8P_RANSAC, LEFT_ONLY, outputLeftOnly,"FastFeatureDetector");
-    // processEpipolarLines("fileoutput/LL/matches_SIFT.yaml", left8, left10, FUNDAMENTAL8P, LEFT_ONLY, outputLeftOnly,"FastFeatureDetector");
-
-    // processEpipolarLines("fileoutput/LL/matches_.yaml", left8, left10, ESSENTIAL_RANSAC, LEFT_ONLY, outputLeftOnly,"FastFeatureDetector");
-
-
-    // processEpipolarLines("fileoutput/LL/matches_FastFeatureDetector.yaml", left8, left10, ESSENTIAL_RANSAC, LEFT_ONLY, output,"FastFeatureDetector");
-
-
-    // processEpipolarLines("fileoutput/LL/matches.yaml", left8, left10, FUNDAMENTAL8P_RANSAC, LEFT_ONLY);
-    // processEpipolarLines("fileoutput/LL/matches.yaml", left8, left10, FUNDAMENTAL8P, LEFT_ONLY);
-    // processEpipolarLines("fileoutput/LR/matches.yaml", left8, right8, ESSENTIAL_RANSAC, LEFT_RIGHT);
-
-    // cout << cameraMatrix << endl;
-
-    // FileStorage matchesFile("fileoutput/LR/matches.yaml", 0);
-    FileStorage matchesFile("fileoutput/LL/matches.yaml", 0);
-    matchesFile["Matches"] >> matches;
-    matchesFile["KP1"] >> kp1;
-    matchesFile["KP2"] >> kp2;
-
-
-    Mat img1 = imread( samples::findFile( left8 ), IMREAD_GRAYSCALE );
-    // Mat img2 = imread( samples::findFile( right8 ), IMREAD_GRAYSCALE );
-    Mat img2 = imread( samples::findFile( left10 ), IMREAD_GRAYSCALE );
-
-    // Size s = img1.size();
-
-    for(auto match : matches)
-    {
-        // cout << match.queryIdx << std::endl;
-        Point2f& p1 = kp1[match.queryIdx].pt;
-        Point2f& p2 = kp2[match.trainIdx].pt;
-
-        pts1.push_back(kp1[match.queryIdx].pt);
-        normPoints1.push_back(Point2d( (2* p1.x / img1.cols) - 1, (2 * p1.y / img1.rows) - 1));
-
-
-        pts2.push_back(kp2[match.trainIdx].pt);
-        normPoints2.push_back(Point2d( (2* p2.x / img1.cols) - 1, (2 * p2.y / img1.rows) - 1));
-        // normPoints2.push_back(Point2f(p2.x / img1.cols, p2.y / img1.rows));
-    }
-
-    // Mat points1 = Mat((int)pts1.size(), 2, CV_64F, pts1.data()).t();
-    // Mat points2 = Mat((int)pts2.size(), 2, CV_64F, pts2.data()).t();    
-
-    // vconcat(points1.t(), ), points1);
-    // vconcat(points2.t(), Mat::ones(1, points2.rows, points2.type()), points2);
-
-
-    vector<double> Kvector = {
-        2.0 / img1.size[1], 0 , -1,
-        0, 2.0 / img1.size[0] , -1,
-        0, 0                  , 1
-    };
-
-    // Mat K(Size(3,3), CV_64F, Kvector.data());
-    // // cout << "Rows: " << img1.rows << " Cols: " << img1.cols << endl;
-    // cout << "K: " << K << endl;
-
-    // Mat n1 = K * points1;
-    // Mat normalizedPts1 = n1.reshape(1,1);
-    // Mat n2 = K * points2;
-    // Mat normalizedPts2 = n2.reshape(1,1);
-
-    // cout <<"NORM: " <<  normalizedPts1.size() << endl;
-
-    std::vector<int> pts_shuffle (matches.size());
-    for (int i = 0; i < matches.size(); i++)
-        pts_shuffle[i] = i;
-    randShuffle(pts_shuffle);
-
-
-    // vector<Point2f> selectedPtcs1;
-    // vector<Point2f> selectedPts2;
-    // for(int i = 0; i < 5; i++)
-    // {
-    //     auto& match = matches[pts_shuffle[i]];
-    //     selectedPts1.push_back(pts1[match.queryIdx]);
-    //     selectedPts2.push_back(pts1[match.trainIdx]);
-    // }
-
-//drawing on left image
-    // const Mat fundamentalMat = findFundamentalMat(points1, points2, FM_8POINT);
-    // const Mat fundamentalMat = findFundamentalMat(pts1, pts2, RANSAC, 1., 0.99, 2000, inliers);
-    // const Mat fn = findFundamentalMat(normPoints1, normPoints2, RANSAC, 1., 0.99, 2000, inliers);
-
-    // Mat emptyMat(Size(2,2), CV_64F, {1, 1, 1, 1});
-    // Mat essentialMat = findEssentialMat(selectedPts1, selectedPts2, KLeft, noArray(),  KRight, noArray(), RANSAC, 0.99, 2000, inliers);
-    
-    Mat essentialMat ,R, t;
-    Mat inliers;
-    cout<<"what the fuck: " << pts1.size() << endl;
-    essentialMat = findEssentialMat(pts1, pts2, KLeft, RANSAC, 0.99, 1, inliers);
-    // recoverPose(pts1, pts2, KLeft, noArray(),  KRight, noArray(), essentialMat, R, t, RANSAC, 0.99, 2000, inliers);
-    // recoverPose(normPoints1, normPoints2, KLeft, noArray(),  KRight, noArray(), essentialMat, R, t, RANSAC, 0.99, 2000, inliers);
-    cout << "Essential: " << essentialMat.size() << endl<< essentialMat << endl;
-    Mat kLeftInv = KLeft.inv();
-    Mat kRightInv = KRight.inv();
-    // Mat fundamentalMat = kRightInv.t() * essentialMat * kLeftInv;
-    Mat fundamentalMat = kLeftInv.t() * essentialMat * kLeftInv;
-    cout << "Fundamental: " << fundamentalMat.size() << endl<< fundamentalMat << endl;
-    cout << "Determinant: " << determinant(fundamentalMat) << endl;
-    // waitKey(0);
-
-    // if(true)
-    // {
-    //     Mat points1 = Mat((int)pts1.size(), 2, CV_64F, pts1.data());
-    //     Mat points2 = Mat((int)pts2.size(), 2, CV_64F, pts2.data());
-    //     vconcat(points1.t(), Mat::ones(1, points1.rows, points1.type()), points1);
-    //     vconcat(points2.t(), Mat::ones(1, points2.rows, points2.type()), points2);
-    //     cout << points1.size() << "    " << points2.t().size() << endl; 
-    //     cout << points1.col(0) << "  2:  " << points2.col(0) << endl; 
-    //     Mat result = points2.t() * fundamentalMat * points1;
-    //     cout << "Result: " << result.size() << endl << result.at<double>(0,0) << endl;
-    //     cout << "Result: " << result.size() << endl << result.at<double>(1,1) << endl;
-    //     cout << "Result: " << result.size() << endl << result.at<double>(2,2) << endl;
-    //     cout << "Result: " << result.size() << endl << result.at<double>(3,3) << endl;
-    // }
-
-    vector<Point2d> inlierPts1, inlierPts2;
-    for(int i = 0; i < inliers.rows ; i ++)
-    {
-        if(inliers.row(i).at<double>(0))
-        {
-            inlierPts1.push_back(pts1[i]);
-            inlierPts2.push_back(pts2[i]);
-            // inlierPts1.push_back(pts1[i]);
-            // inlierPts2.push_back(pts2[i]);
-        } 
-    };
-    cout << "Inlier size: " << inlierPts1.size() << endl;
-    // Mat fundamentalMat = K.t() * fn * K;
-
-    vector<Point3f> lines1;
-    // computeCorrespondEpilines(points2, 2, fundamentalMat, lines1);
-    // drawLines(img1, img2, lines1, points1, points2, img5, img6);
-    // drawLines(img1, img2, fundamentalMat, pts1, pts2, img5, img6, inliers);
-
-    // drawLines(img1, img2, essentialMat, pts1, pts2, img5, img6, inliers);
-    // drawLines(img1, img2, essentialMat, inlierPts1, inlierPts2, inliers);
-    // drawLines(img1, img2, essentialMat, inlierPts1, inlierPts2, inliers);
-    // drawLines(img1, img2, fundamentalMat, normPoints1, normPoints2, inliers);
-    drawLines(img1, img2, fundamentalMat, pts1, pts2, inliers);
-
-
-    // vector<Point3f> lines2;
-    // computeCorrespondEpilines(points1, 1, fundamentalMat, lines2);
-    // drawLines(img2, img1, lines2, points2, points1, img3, img4);
-
-    // lineImgs1.get(0);
-    // vector<Mat> orderedImgs = {img5, img3};
-    // Mat outImg;
-    // hconcat(orderedImgs.data(), 2, outImg);
-    hconcat(img1, img2, img1);
-
-    // const int new_img_size = 640 * 480; // for example
-    // // resize with the same aspect ratio
-    // resize(img1, img1, Size((int) sqrt ((double) img1.cols * new_img_size / img1.rows),
-    //                             (int)sqrt ((double) img1.rows * new_img_size / img1.cols)));
-
-    imshow("epipolar lines, image 1, 2", img1);
-    waitKey();
-
-    // for(auto line : lines)
-    // {
-    //     cout << line << endl;
-    // }
-    // cout << fundamentalMat << endl;
     return 0;
 }
