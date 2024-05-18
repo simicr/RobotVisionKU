@@ -60,7 +60,8 @@ void detection_and_matching(string& output, Mat img1, Mat img2, Ptr<Feature2D> d
     imwrite( output + detector_name + "2.png", img_keypoints2);
     imwrite( output + detector_name + "+" + descriptor_name +".png", img_matches);
 
-    FileStorage fs(output + "matches.yaml", FileStorage::WRITE);
+    cout << "Good matches: " << good_matches.size() << endl;
+    FileStorage fs(output + "matches_"+ detector_name +".yaml", FileStorage::WRITE | FileStorage::APPEND);
     fs << "Matches" << good_matches;
     fs << "KP1" << keypoints1;
     fs << "KP2" << keypoints2;
