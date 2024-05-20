@@ -60,7 +60,7 @@ void detection_and_matching(string& output, Mat img1, Mat img2, Ptr<Feature2D> d
     imwrite( output + detector_name + "2.png", img_keypoints2);
     imwrite( output + detector_name + "+" + descriptor_name +".png", img_matches);
 
-    cout << "Good matches: " << good_matches.size() << endl;
+    cout << detector_name << " " << descriptor_name <<" Good matches: " << good_matches.size() << endl;
     FileStorage fs(output + "matches_"+ detector_name +".yaml", FileStorage::WRITE | FileStorage::APPEND);
     fs << "Matches" << good_matches;
     fs << "KP1" << keypoints1;
@@ -79,10 +79,10 @@ int feature_matching(string& left_image, string& right_image, string& output)
     return -1;
     }
 
-    Ptr<SURF> surf = SURF::create();
+    Ptr<SURF> surf = SURF::create(400.0);
     Ptr<ORB> orb = ORB::create();
-    Ptr<SIFT> sift = SIFT::create();
-    Ptr<FastFeatureDetector> fast = FastFeatureDetector::create();
+    Ptr<SIFT> sift = SIFT::create(500);
+    Ptr<FastFeatureDetector> fast = FastFeatureDetector::create(50);
     Ptr<BriefDescriptorExtractor> brief = BriefDescriptorExtractor::create();
 
     detection_and_matching(output, img1, img2, surf, false, nullptr);

@@ -6,7 +6,6 @@
 #include <opencv2/calib3d.hpp>
 #include "opencv2/xfeatures2d.hpp"
 #include <opencv2/imgproc.hpp>
-// #include <random>
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -111,6 +110,9 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
     Mat img1 = imread( samples::findFile( img1Path ), IMREAD_GRAYSCALE );
     Mat img2 = imread( samples::findFile( img2Path ), IMREAD_GRAYSCALE );
 
+
+    cout << detectorName << endl;
+
     for(auto match : matches)
     {
         Point2f& p1 = kp1[match.queryIdx].pt;
@@ -141,9 +143,6 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
             recoverPose(pts1, pts2, KLeft, noArray(),  KRight, noArray(), essentialMat, R, t, RANSAC, 0.99, 1, inliers);
             fundamentalMat = kRightInv.t() * essentialMat * kLeftInv;
         }
-
-        cout << "Fundamental: " << fundamentalMat.size() << endl<< fundamentalMat << endl;
-        cout << "Determinant: " << determinant(fundamentalMat) << endl;
     }
     else
     {
@@ -164,6 +163,9 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
         fundamentalMat = K.t() * fn * K;
     }
 
+    cout << "\tFundamental: " << fundamentalMat.size() << endl<< "\t" << fundamentalMat << endl;
+    cout << "\tDeterminant: " << determinant(fundamentalMat) << endl;
+
     vector<Point2d> inlierPts1, inlierPts2;
     for(int i = 0; i < inliers.rows ; i ++)
     {
@@ -176,10 +178,8 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
 
     drawLines(img1, img2, fundamentalMat, inlierPts1, inlierPts2, inliers);
     hconcat(img1, img2, img1);
-    // imshow("epipolar lines, image 1, 2", img1);
-    // waitKey();
     string fileName = output + detectorName + "_" + getAlogorithmFromEnum(alg) + ".png";
-    cout << "Saving: " << fileName << endl;
+    cout << "\tSaving: " << fileName << endl;
     imwrite( fileName, img1);
 };
 
