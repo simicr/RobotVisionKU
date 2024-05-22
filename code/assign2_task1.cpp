@@ -104,4 +104,6 @@ int main( int argc, char* argv[] )
 
     feature_matching( left8, right8, matching_out1);
     feature_matching( left8, left10, matching_out2);
+    
+    return 0;
 }

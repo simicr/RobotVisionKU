@@ -47,8 +47,6 @@ void drawLines(Mat& inImg1, Mat& inImg2, Mat F, vector<Point2d> pts1, vector<Poi
     vconcat(points1.t(), Mat::ones(1, points1.rows, points1.type()), points1);
     vconcat(points2.t(), Mat::ones(1, points2.rows, points2.type()), points2);
 
-    // cout << "Points 1: " << points1.row(0) << endl;
-
     RNG rng(rand());
     const int circle_sz = 4, line_sz = 1, max_lines = 300;
 
@@ -71,16 +69,12 @@ void drawLines(Mat& inImg1, Mat& inImg2, Mat F, vector<Point2d> pts1, vector<Poi
         //from opencv samples - epipolar_lines.cpp
         double a1 = l1.at<double>(0), b1 = l1.at<double>(1), c1 = l1.at<double>(2);
         double a2 = l2.at<double>(0), b2 = l2.at<double>(1), c2 = l2.at<double>(2);
-        const double mag1 = sqrt(a1*a1 + b1*b1), mag2 = (a2*a2 + b2*b2);
+        const double mag1 = sqrt(a1*a1 + b1*b1), mag2 = sqrt(a2*a2 + b2*b2);
         a1 /= mag1; b1 /= mag1; c1 /= mag1; a2 /= mag2; b2 /= mag2; c2 /= mag2;
 
-
-        line(img1, Point2d(0, -c1/b1),
-                Point2d((double)img1.cols, -(a1*img1.cols+c1)/b1), col, line_sz);
-        // line(img2, Point2d(0, -c2/b2),
-        //         Point2d((double)img2.cols, -(a2*img2.cols+c2)/b2), col, line_sz);
-        circle (img1, pts1[i], circle_sz, col, -1);
-        circle (img2, pts2[i], circle_sz, col, -1);
+        line(img1, Point2d(0, -c1/b1), Point2d((double)img1.cols, -(a1*img1.cols+c1)/b1), col, line_sz);
+        circle(img1, pts1[i], circle_sz, col, -1);
+        circle(img2, pts2[i], circle_sz, col, -1);
     }
     inImg1 = img1;
     inImg2 = img2;
@@ -110,9 +104,7 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
     Mat img1 = imread( samples::findFile( img1Path ), IMREAD_GRAYSCALE );
     Mat img2 = imread( samples::findFile( img2Path ), IMREAD_GRAYSCALE );
 
-
     cout << detectorName << endl;
-
     for(auto match : matches)
     {
         Point2f& p1 = kp1[match.queryIdx].pt;
@@ -163,8 +155,7 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
         fundamentalMat = K.t() * fn * K;
     }
 
-    cout << "\tFundamental: " << fundamentalMat.size() << endl<< "\t" << fundamentalMat << endl;
-    cout << "\tDeterminant: " << determinant(fundamentalMat) << endl;
+    cout << "Determinant: " << determinant(fundamentalMat) << endl;
 
     vector<Point2d> inlierPts1, inlierPts2;
     for(int i = 0; i < inliers.rows ; i ++)
@@ -179,24 +170,11 @@ void processEpipolarLines(string matchesFilePath, string img1Path, string img2Pa
     drawLines(img1, img2, fundamentalMat, inlierPts1, inlierPts2, inliers);
     hconcat(img1, img2, img1);
     string fileName = output + detectorName + "_" + getAlogorithmFromEnum(alg) + ".png";
-    cout << "\tSaving: " << fileName << endl;
+    cout << "Saving: " << fileName << endl;
     imwrite( fileName, img1);
 };
 
 int main() {
-    vector<DMatch> matches;
-    vector<KeyPoint> kp1, kp2;
-    vector<Point2d> pts1, pts2;
-    vector<Point2d> normPoints1, normPoints2;
-
-    vector<double> KLeftParams = {9.842439e+02, 0.000000e+00, 6.900000e+02, 0.000000e+00, 9.808141e+02, 2.331966e+02, 
-    0.000000e+00, 0.000000e+00, 1.000000e+00};
-
-    vector<double> KRightParams = {9.895267e+02, 0.000000e+00, 7.020000e+02, 0.000000e+00, 9.878386e+02, 2.455590e+02,
-     0.000000e+00, 0.000000e+00, 1.000000e+00};
-
-    Mat KLeft(3, 3, CV_64F, KLeftParams.data());
-    Mat KRight(3, 3, CV_64F, KRightParams.data());
 
     string left8 = "IMG_CAL_DATA/left08.png";
     string left10 = "IMG_CAL_DATA/left10.png";
@@ -253,5 +231,6 @@ int main() {
     processEpipolarLines(inputLeftRight + matchesSIFT, left8, right8, FUNDAMENTAL8P_RANSAC, LEFT_RIGHT, outputLeftRight,"SIFT");
 
     //====================================
+    
     return 0;
 }
