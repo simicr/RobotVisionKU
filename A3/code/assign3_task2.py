@@ -4,94 +4,75 @@ import sys
 sys.path.append('./monodepth2')
 
 
+from PIL import Image
 import numpy as np
 import cv2
-
+from layers import disp_to_depth
 from evaluate_depth import STEREO_SCALE_FACTOR
+
 
 
 class Settings():
     def __init__(self) -> None:
-        self.prediction_path = ''
-        self.ground_truth_path = ''
-        self.pred_depth_scale_factor = 1.0
-        self.disable_median_scaling = False
+        self.prediction_path = 'fileoutput/NPY_Depth'
+        self.ground_truth_path = 'data_ass3/Task1_3/groundtruth'
+        self.min_depth = 0.001
+        self.max_depth = 80
 
-def compute_errors(gt, pred):
-    """Computation of error metrics between predicted and ground truth depths
-    """
-    thresh = np.maximum((gt / pred), (pred / gt))
-    a1 = (thresh < 1.25     ).mean()
-    a2 = (thresh < 1.25 ** 2).mean()
-    a3 = (thresh < 1.25 ** 3).mean()
+def import_depth_info(path):
+    npy_files = [f for f in os.listdir(path) if f.endswith('.npy')]
+    arrays = [np.squeeze(np.load(os.path.join(path, f)), axis=0) for f in npy_files]
+    concatenated_array = np.concatenate(arrays, axis=0)
+    return concatenated_array
 
-    rmse = (gt - pred) ** 2
-    rmse = np.sqrt(rmse.mean())
+def import_gt_info(path):
 
-    rmse_log = (np.log(gt) - np.log(pred)) ** 2
-    rmse_log = np.sqrt(rmse_log.mean())
+    png_files = [f for f in os.listdir(path) if f.endswith('.png')]
+    arrays = []
+    
+    for f in png_files:
+        img = cv2.imread(os.path.join(path, f), cv2.IMREAD_UNCHANGED)
+        img_array = np.array(img)
+        arrays.append(img_array)
 
-    abs_rel = np.mean(np.abs(gt - pred) / gt)
-
-    sq_rel = np.mean(((gt - pred) ** 2) / gt)
-
-    return abs_rel, sq_rel, rmse, rmse_log, a1, a2, a3
-
+    concatenated_array = np.stack(arrays, axis=0)
+    
+    return concatenated_array
 
 def error_eval(opt):
 
-    MIN_DEPTH = 1e-3
-    MAX_DEPTH = 80
+    pred_depths = import_depth_info(opt.prediction_path)
+    gt_depths = import_gt_info(opt.ground_truth_path)
 
-    pred_disps = ...
-    gt_depths = ...
 
-    if opt.eval_stereo:
-        print("   Stereo evaluation - "
-              "disabling median scaling, scaling by {}".format(STEREO_SCALE_FACTOR))
-        opt.disable_median_scaling = True
-        opt.pred_depth_scale_factor = STEREO_SCALE_FACTOR
-    else:
-        print("   Mono evaluation - using median scaling")
+    print(f' Predicted value shape: {pred_depths.shape}')
+    print(f' Groundtruth value shape: {gt_depths.shape}')
 
     errors = []
-    ratios = []
-
-    for i in range(pred_disps.shape[0]):
+    for i in range(pred_depths.shape[0]):
 
         gt_depth = gt_depths[i]
         gt_height, gt_width = gt_depth.shape[:2]
-
-        pred_disp = pred_disps[i]
-        pred_disp = cv2.resize(pred_disp, (gt_width, gt_height))
-        pred_depth = 1 / pred_disp
-
         mask = gt_depth > 0
 
-        pred_depth = pred_depth[mask]
+
+        pred = pred_depths[i]
+        pred = cv2.resize(pred, (gt_width, gt_height), interpolation= 2)
+
+        gt_depth = (gt_depth.astype(np.float32) / 256.0)
+        _ , gt_depth = disp_to_depth(gt_depth, opt.min_depth, opt.max_depth)
+        gt_depth *= STEREO_SCALE_FACTOR
+
+
+        pred = pred[mask]
         gt_depth = gt_depth[mask]
 
-        pred_depth *= opt.pred_depth_scale_factor
-        if not opt.disable_median_scaling:
-            ratio = np.median(gt_depth) / np.median(pred_depth)
-            ratios.append(ratio)
-            pred_depth *= ratio
+        rmse = (gt_depth - pred) ** 2
+        rmse = np.sqrt(rmse.mean())
+        errors.append(rmse)
 
-        pred_depth[pred_depth < MIN_DEPTH] = MIN_DEPTH
-        pred_depth[pred_depth > MAX_DEPTH] = MAX_DEPTH
-
-        errors.append(compute_errors(gt_depth, pred_depth))
-
-    if not opt.disable_median_scaling:
-        ratios = np.array(ratios)
-        med = np.median(ratios)
-        print(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, np.std(ratios / med)))
-
-    mean_errors = np.array(errors).mean(0)
-
-    print("\n  " + ("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
-    print(("&{: 8.3f}  " * 7).format(*mean_errors.tolist()) + "\\\\")
-    print("\n-> Done!")
+    mean_rmse = np.array(errors).mean()
+    print(f' RMSE: {mean_rmse}')
 
 if __name__ == "__main__":
     settings = Settings()

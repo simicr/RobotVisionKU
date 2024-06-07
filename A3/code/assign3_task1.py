@@ -23,33 +23,30 @@ class Settings():
         self.model_name = 'mono+stereo_640x192'
         self.output_path = 'fileoutput'
         self.ext = 'png'
-        self.min_depth = 0.1
-        self.max_depth = 100
+        self.min_depth = 0.001
+        self.max_depth = 80
         self.no_cuda = True
         self.pred_metric_depth = True
 
 def predict_depth(settings):
-    """ 
-        Function to predict for a single image or folder of images.
-        Taken from the monodepth2/test_simple.py file and rewritten a bit.
-    """
+
+    model_path = os.path.join("models", settings.model_name)
+    encoder_path = os.path.join(model_path, "encoder.pth")
+    depth_decoder_path = os.path.join(model_path, "depth.pth")
+    paths = glob.glob(os.path.join(settings.image_path, '*.{}'.format(settings.ext)))
+    output_directory = settings.output_path
 
     if torch.cuda.is_available() and not settings.no_cuda:
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
 
-    model_path = os.path.join("models", settings.model_name)
     print("-> Loading model from ", model_path)
-    encoder_path = os.path.join(model_path, "encoder.pth")
-    depth_decoder_path = os.path.join(model_path, "depth.pth")
+    
 
-    # LOADING PRETRAINED MODEL
     print("   Loading pretrained encoder")
-    encoder = networks.ResnetEncoder(18, False)
+    encoder = networks.ResnetEncoder(18, True)
     loaded_dict_enc = torch.load(encoder_path, map_location=device)
-
-    # extract the height and width of image that this model was trained with
     feed_height = loaded_dict_enc['height']
     feed_width = loaded_dict_enc['width']
     filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
@@ -63,25 +60,10 @@ def predict_depth(settings):
     depth_decoder.load_state_dict(loaded_dict)
     depth_decoder.to(device)
     depth_decoder.eval()
-
-    if os.path.isfile(settings.image_path):
-        paths = [settings.image_path]
-        output_directory = os.path.dirname(settings.image_path)
-    elif os.path.isdir(settings.image_path):
-        paths = glob.glob(os.path.join(settings.image_path, '*.{}'.format(settings.ext)))
-        output_directory = settings.output_path
-    else:
-        raise Exception("Can not find args.image_path: {}".format(settings.image_path))
-
-    print("-> Predicting on {:d} test images".format(len(paths)))
-
     
 
     with torch.no_grad():
-        for idx, image_path in enumerate(paths):
-
-            if image_path.endswith("_disp.jpg"):
-                continue
+        for _, image_path in enumerate(paths):
 
             input_image = pil.open(image_path).convert('RGB')
             original_width, original_height = input_image.size
@@ -96,9 +78,8 @@ def predict_depth(settings):
             disp_resized = torch.nn.functional.interpolate( disp, (original_height, original_width), 
                                                            mode="bilinear", align_corners=False)
 
-            # Saving numpy file
             output_name = os.path.splitext(os.path.basename(image_path))[0]
-            scaled_disp, depth = disp_to_depth(disp, settings.min_depth, settings.max_depth) # Would need to analyze
+            scaled_disp, depth = disp_to_depth(disp, settings.min_depth, settings.max_depth)
             
             if settings.pred_metric_depth:
                 name_depth_npy = os.path.join(output_directory, "NPY_Depth" ,"{}_depth.npy".format(output_name))
@@ -106,9 +87,8 @@ def predict_depth(settings):
                 np.save(name_depth_npy, metric_depth)
             
             name_dest_npy = os.path.join(output_directory, "NPY_Disp" , "{}_disp.npy".format(output_name))
-            np.save(name_dest_npy, scaled_disp.cpu().numpy())
+            np.save(name_dest_npy, disp.cpu().numpy())
 
-            # Saving colormapped depth image
             disp_resized_np = disp_resized.squeeze().cpu().numpy()
             vmax = np.percentile(disp_resized_np, 95)
             normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
@@ -118,15 +98,6 @@ def predict_depth(settings):
 
             name_dest_im = os.path.join(output_directory, "IMG" ,"{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
-
-            print("   Processed {:d} of {:d} images - saved predictions to:".format(
-                idx + 1, len(paths)))
-            print("   - {}".format(name_dest_im))
-            print("   - {}".format(name_dest_npy))
-            
-            if settings.pred_metric_depth:
-                print("   - {}".format(name_depth_npy))
-
 
     print('-> Done!')
 
