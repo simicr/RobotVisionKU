@@ -42,6 +42,18 @@ def predict_depth(settings):
     paths = glob.glob(os.path.join(settings.image_path, '*.{}'.format(settings.ext)))
     output_directory = settings.output_path
 
+    depth_dir = os.path.join(output_directory, settings.output_depth )
+    disp_dir = os.path.join(output_directory, settings.output_disp)
+    img_dir = os.path.join(output_directory, settings.output_img)
+
+
+    if not os.path.exists(disp_dir):
+        os.makedirs(disp_dir)
+    if not os.path.exists(depth_dir):
+        os.makedirs(depth_dir)
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
+
     if torch.cuda.is_available() and not settings.no_cuda:
         device = torch.device("cuda")
     else:
@@ -82,12 +94,12 @@ def predict_depth(settings):
             output_name = os.path.splitext(os.path.basename(image_path))[0]
             scaled_disp, depth = disp_to_depth(disp, settings.min_depth, settings.max_depth)
             
-            name_depth_npy = os.path.join(output_directory, settings.output_depth ,"{}_depth.npy".format(output_name))
-            metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
+
+            name_depth_npy = os.path.join(depth_dir,"{}_depth.npy".format(output_name))
+            metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()      
             np.save(name_depth_npy, metric_depth)
 
-
-            name_dest_npy = os.path.join(output_directory, settings.output_disp , "{}_disp.npy".format(output_name))
+            name_dest_npy = os.path.join(disp_dir, "{}_disp.npy".format(output_name))
             np.save(name_dest_npy, disp.cpu().numpy())
 
 
@@ -98,8 +110,8 @@ def predict_depth(settings):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
 
-
-            name_dest_im = os.path.join(output_directory, settings.output_img ,"{}_disp.jpeg".format(output_name))
+            
+            name_dest_im = os.path.join(img_dir ,"{}_disp.jpeg".format(output_name))
             im.save(name_dest_im)
 
 

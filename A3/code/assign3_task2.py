@@ -8,7 +8,7 @@ import cv2
 
 class Settings2():
     def __init__(self, prediction_path='fileoutput/NPY_Depth', 
-                 ground_truth_path='data_ass3/Task1_3/groundtruth', ext='png') -> None:
+                 ground_truth_path='data_ass3/Task1_3/groundtruth', ext='.npy') -> None:
         
         self.prediction_path = prediction_path
         self.ground_truth_path = ground_truth_path
@@ -55,8 +55,8 @@ def error_eval(opt):
 
         pred = pred_depths[i]
         pred = cv2.resize(pred, (gt_width, gt_height))[mask]
-        pred[pred < settings.min_depth] = settings.min_depth
-        pred[pred > settings.max_depth] = settings.max_depth
+        pred[pred < opt.min_depth] = opt.min_depth
+        pred[pred > opt.max_depth] = opt.max_depth
 
         gt_depth = ((gt_depth.astype(np.float32) / 256.0)[mask])
 
