@@ -116,8 +116,8 @@ def comparing_methods():
         print(f'(Monodepth) \t {i + 1}. {" ".join(pred_files[i].split(".")[:-1])} : {mono_rmse}')
         print(f'(Unimatch) \t {i + 1}. {" ".join(unimatch_files[i].split(".")[:-1])} : {unimatch_rmse}')
 
-        pred_mask = predicted_abs_diff <= 10
-        unimatch_mask = unimatch_abs_diff <= 10
+        pred_mask = (predicted_abs_diff > 0) & (predicted_abs_diff <= 10)
+        unimatch_mask = (unimatch_abs_diff > 0) & (unimatch_abs_diff <= 10)
 
         fig = plt.figure()
         predicted_abs_diff = predicted_abs_diff[pred_mask]
