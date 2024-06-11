@@ -1,6 +1,6 @@
 import os
 from assign3_task1 import Settings1, predict_depth
-from assign3_task2 import Settings2, error_eval, import_depth_info
+from assign3_task2 import import_depth_info
 import numpy as np
 import cv2
 from pathlib import Path
@@ -50,13 +50,14 @@ def import_unimatch_info(path, ext):
     return arrays, npy_files
 
 def print_and_save_error(gt_depth, pred_depth, pred_output_path, pred_filename, i):
-        rmse = np.sqrt(((gt_depth - pred_depth) ** 2).mean())
+    
+    rmse = np.sqrt(((gt_depth - pred_depth) ** 2).mean())
 
-        predicted_abs_diff = np.abs(gt_depth - pred_depth)
-        predicted_diff_img = np.uint16(predicted_abs_diff * 256)
-        save_path = os.path.join(pred_output_path, f'{" ".join(pred_filename.split(".")[:-1])}.png')
-        cv2.imwrite(save_path, predicted_diff_img)
-        return rmse, predicted_abs_diff, predicted_diff_img
+    predicted_abs_diff = np.abs(gt_depth - pred_depth)
+    predicted_diff_img = np.uint16(predicted_abs_diff * 256)
+    save_path = os.path.join(pred_output_path, f'{" ".join(pred_filename.split(".")[:-1])}.png')
+    cv2.imwrite(save_path, predicted_diff_img)
+    return rmse, predicted_abs_diff, predicted_diff_img
 
 def comparing_methods():
     f = 721 #px
@@ -85,11 +86,9 @@ def comparing_methods():
     gt_imgs, png_files = import_gt_info("data_ass3/Task4/GT_disparities/disp_noc_0/")
     pred_depths, pred_files = import_depth_info(pred_path, "npy")
     unimatch_disp, unimatch_files = import_unimatch_info(unimatch_path, "pfm")
-    #skipping last img for now due to different dimensions
+
     for i in range(len(png_files)):
-        # gt_img = gt_imgs[i]
-        # gt_height, gt_width = gt_img.shape[:2]
-        #gt are stored as shape and array tuples since last one has different dimensions
+        
         gt_img = gt_imgs[i][1]
         gt_height, gt_width = gt_imgs[i][0]
 
@@ -104,12 +103,10 @@ def comparing_methods():
         pred_depth = pred_depths[i]
         pred_depth = cv2.resize(pred_depth, (gt_width, gt_height))
 
-        far_filter_mask = (gt_depth < 120).reshape((gt_height, gt_width))
-        gt_depth *=  far_filter_mask
         pred_depth *= mask
-        pred_depth *= far_filter_mask
+        pred_depth[pred_depth > 120] = 120
         unimatch_depth *= mask
-        unimatch_depth *= far_filter_mask
+        unimatch_depth[unimatch_depth > 120] = 120
 
         mono_rmse, predicted_abs_diff, _ = print_and_save_error(gt_depth, pred_depth, pred_output_path, pred_files[i], i)
         unimatch_rmse, unimatch_abs_diff, _ = print_and_save_error(gt_depth, unimatch_depth, unimatch_output_path, unimatch_files[i], i)
